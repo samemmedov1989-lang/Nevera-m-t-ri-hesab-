@@ -1,1 +1,261 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeVeRa HoMe MeBeL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+        .gold-border { border-color: #d97706; }
+        .gold-bg { background-color: #d97706; }
+        .gold-text { color: #f59e0b; }
+    </style>
+</head>
+<body class="pb-12">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-amber-600/30 w-full max-w-sm text-center shadow-2xl">
+            <h1 class="text-2xl font-bold gold-text mb-2">NeVeRa HoMe MeBeL</h1>
+            <p class="text-slate-400 text-sm mb-6">Daxil olmaq üçün PİN kodu daxil edin</p>
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" class="w-full text-center text-3xl tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-xl text-amber-500 mb-4 focus:outline-none focus:border-amber-500">
+            <button onclick="checkPin()" class="w-full gold-bg text-slate-900 font-bold py-3 rounded-xl hover:bg-amber-600 transition">Daxil Ol</button>
+            <p id="loginError" class="text-red-500 text-xs mt-3 hidden">Səhv PİN kod!</p>
+        </div>
+    </div>
 
+    <!-- Main Content -->
+    <div id="mainContent" class="hidden container mx-auto max-w-lg p-4">
+        <header class="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
+            <div>
+                <h1 class="text-xl font-bold gold-text">NeVeRa HoMe MeBeL</h1>
+                <p class="text-xs text-slate-400">Qiymət Cədvəli və İnvoys Sistemi</p>
+            </div>
+            <button onclick="logout()" class="text-slate-400 hover:text-white"><i class="fas fa-sign-out-alt text-lg"></i></button>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6 bg-slate-800 p-1 rounded-xl">
+            <button onclick="switchTab('invoice')" id="tabInvoice" class="flex-1 py-2 text-sm font-semibold rounded-lg gold-bg text-slate-900">İnvoys</button>
+            <button onclick="switchTab('products')" id="tabProducts" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400">Məhsullar</button>
+            <button onclick="switchTab('clients')" id="tabClients" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400">Müştərilər</button>
+        </div>
+
+        <!-- Invoice Tab -->
+        <div id="sectionInvoice">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Müştəri Seçin</label>
+                <select id="clientSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:outline-none">
+                    <option value="">-- Müştəri Seç --</option>
+                </select>
+            </div>
+
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Məhsul Əlavə Et</label>
+                <div class="flex gap-2 mb-3">
+                    <select id="productSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:outline-none">
+                        <option value="">-- Məhsul Seç --</option>
+                    </select>
+                    <input type="number" id="itemQty" value="1" min="1" class="w-16 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-center text-slate-200 text-sm">
+                </div>
+                <button onclick="addItemToInvoice()" class="w-full bg-slate-700 text-amber-400 text-sm font-semibold py-2 rounded-lg hover:bg-slate-600">+ Əlavə et</button>
+            </div>
+
+            <!-- Items Table -->
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
+                <h3 class="text-sm font-bold text-slate-300 mb-3">Sifariş Siyahısı</h3>
+                <div id="invoiceItems" class="space-y-2 mb-4">
+                    <p class="text-xs text-slate-500 text-center py-2">Hələ heç nə əlavə olunmayıb</p>
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t border-slate-700 font-bold">
+                    <span class="text-slate-300">Yekun Məbləğ:</span>
+                    <span id="totalAmount" class="gold-text text-lg">0 AZN</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="generatePDF()" class="flex-1 gold-bg text-slate-900 font-bold py-3 rounded-xl hover:bg-amber-600 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-file-pdf"></i> PDF Yüklə
+                </button>
+                <button onclick="shareWhatsApp()" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 transition flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="sectionProducts" class="hidden">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
+                <h3 class="text-sm font-bold text-slate-300 mb-3">Yeni Məhsul</h3>
+                <input type="text" id="newProdName" placeholder="Məhsul adı (Məs: Yataq dəsti)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-2">
+                <input type="number" id="newProdPrice" placeholder="Qiyməti (AZN)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-3">
+                <button onclick="addProduct()" class="w-full gold-bg text-slate-900 font-bold py-2 rounded-lg">Məhsulu Yadda Saxla</button>
+            </div>
+            <div id="productList" class="space-y-2"></div>
+        </div>
+
+        <!-- Clients Tab -->
+        <div id="sectionClients" class="hidden">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
+                <h3 class="text-sm font-bold text-slate-300 mb-3">Yeni Müştəri</h3>
+                <input type="text" id="newClientName" placeholder="Ad Soyad" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-2">
+                <input type="tel" id="newClientPhone" placeholder="Telefon (050...)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-3">
+                <button onclick="addClient()" class="w-full gold-bg text-slate-900 font-bold py-2 rounded-lg">Müştərini Yadda Saxla</button>
+            </div>
+            <div id="clientList" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_PIN = "1234";
+        let products = JSON.parse(localStorage.getItem('never_products')) || [
+            { id: 1, name: "Mətbəx Mebeli (metr)", price: 350 },
+            { id: 2, name: "Dəhliz Mebeli", price: 500 }
+        ];
+        let clients = JSON.parse(localStorage.getItem('never_clients')) || [
+            { id: 1, name: "Əli Məmmədov", phone: "0501234567" }
+        ];
+        let currentInvoice = [];
+
+        function checkPin() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin === CORRECT_PIN) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                initData();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('pinInput').value = '';
+        }
+
+        function switchTab(tab) {
+            ['invoice', 'products', 'clients'].forEach(t => {
+                document.getElementById('section' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400";
+            });
+            document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).className = "flex-1 py-2 text-sm font-semibold rounded-lg gold-bg text-slate-900";
+        }
+
+        function initData() {
+            updateClientSelect();
+            updateProductSelect();
+            renderProducts();
+            renderClients();
+        }
+
+        function addProduct() {
+            const name = document.getElementById('newProdName').value;
+            const price = parseFloat(document.getElementById('newProdPrice').value);
+            if (name && price) {
+                products.push({ id: Date.now(), name, price });
+                localStorage.setItem('never_products', JSON.stringify(products));
+                document.getElementById('newProdName').value = '';
+                document.getElementById('newProdPrice').value = '';
+                initData();
+            }
+        }
+
+        function addClient() {
+            const name = document.getElementById('newClientName').value;
+            const phone = document.getElementById('newClientPhone').value;
+            if (name) {
+                clients.push({ id: Date.now(), name, phone });
+                localStorage.setItem('never_clients', JSON.stringify(clients));
+                document.getElementById('newClientName').value = '';
+                document.getElementById('newClientPhone').value = '';
+                initData();
+            }
+        }
+
+        function updateClientSelect() {
+            const select = document.getElementById('clientSelect');
+            select.innerHTML = '<option value="">-- Müştəri Seç --</option>';
+            clients.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name} (${c.phone})</option>`);
+        }
+
+        function updateProductSelect() {
+            const select = document.getElementById('productSelect');
+            select.innerHTML = '<option value="">-- Məhsul Seç --</option>';
+            products.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name} - ${p.price} AZN</option>`);
+        }
+
+        function renderProducts() {
+            const list = document.getElementById('productList');
+            list.innerHTML = '';
+            products.forEach(p => {
+                list.innerHTML += `<div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center text-sm"><span class="text-slate-200">${p.name}</span><span class="gold-text font-bold">${p.price} AZN</span></div>`;
+            });
+        }
+
+        function renderClients() {
+            const list = document.getElementById('clientList');
+            list.innerHTML = '';
+            clients.forEach(c => {
+                list.innerHTML += `<div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center text-sm"><span class="text-slate-200">${c.name}</span><span class="text-slate-400">${c.phone}</span></div>`;
+            });
+        }
+
+        function addItemToInvoice() {
+            const pId = document.getElementById('productSelect').value;
+            const qty = parseInt(document.getElementById('itemQty').value);
+            if (!pId || !qty) return;
+            const prod = products.find(p => p.id == pId);
+            currentInvoice.push({ ...prod, qty, total: prod.price * qty });
+            renderInvoiceItems();
+        }
+
+        function renderInvoiceItems() {
+            const container = document.getElementById('invoiceItems');
+            if (currentInvoice.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Hələ heç nə əlavə olunmayıb</p>';
+                document.getElementById('totalAmount').innerText = '0 AZN';
+                return;
+            }
+            container.innerHTML = '';
+            let grandTotal = 0;
+            currentInvoice.forEach((item, index) => {
+                grandTotal += item.total;
+                container.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-2 rounded text-xs"><span class="text-slate-300">${item.name} x${item.qty}</span><span class="gold-text font-semibold">${item.total} AZN</span></div>`;
+            });
+            document.getElementById('totalAmount').innerText = grandTotal + ' AZN';
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("NeVeRa HoMe MeBeL", 14, 20);
+            doc.text("Qiymət Siyahısı / Qiymət Təklifi", 14, 30);
+            
+            const tableData = currentInvoice.map(i => [i.name, i.qty, i.price + " AZN", i.total + " AZN"]);
+            doc.autoTable({
+                startY: 40,
+                head: [['Məhsul', 'Say', 'Qiymət', 'Cəmi']],
+                body: tableData,
+            });
+            doc.save("Nevera_Mebel_Invoys.pdf");
+        }
+
+        function shareWhatsApp() {
+            const cId = document.getElementById('clientSelect').value;
+            const client = clients.find(c => c.id == cId);
+            let msg = "NeVeRa HoMe MeBeL - Qiymət Cədvəli%0A%0A";
+            currentInvoice.forEach(i => {
+                msg += `• ${i.name} (x${i.qty}) - ${i.total} AZN%0A`;
+            });
+            msg += `%0AYekun: ${document.getElementById('totalAmount').innerText}`;
+            const phone = client ? client.phone : "";
+            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+        }
+    </script>
+</body>
+</html>
