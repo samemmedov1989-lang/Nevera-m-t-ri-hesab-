@@ -3,258 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeVeRa HoMe MeBeL</title>
+    <title>İnvoys və Qaimə Sistemi</title>
+    <!-- Tailwind CSS (Dizayn üçün) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF (PDF hazırlamaq üçün) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-        .gold-border { border-color: #d97706; }
-        .gold-bg { background-color: #d97706; }
-        .gold-text { color: #f59e0b; }
+        .hidden-screen { display: none; }
     </style>
 </head>
-<body class="pb-12">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 p-6 rounded-2xl border border-amber-600/30 w-full max-w-sm text-center shadow-2xl">
-            <h1 class="text-2xl font-bold gold-text mb-2">NeVeRa HoMe MeBeL</h1>
-            <p class="text-slate-400 text-sm mb-6">Daxil olmaq üçün PİN kodu daxil edin</p>
-            <input type="password" id="pinInput" maxlength="4" placeholder="••••" class="w-full text-center text-3xl tracking-widest py-3 bg-slate-900 border border-slate-700 rounded-xl text-amber-500 mb-4 focus:outline-none focus:border-amber-500">
-            <button onclick="checkPin()" class="w-full gold-bg text-slate-900 font-bold py-3 rounded-xl hover:bg-amber-600 transition">Daxil Ol</button>
-            <p id="loginError" class="text-red-500 text-xs mt-3 hidden">Səhv PİN kod!</p>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div id="login-screen" class="flex items-center justify-center h-screen">
+        <div class="bg-white p-8 rounded-xl shadow-md w-80 text-center">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Sistemə Giriş</h2>
+            <input type="password" id="pin-input" placeholder="Giriş kodu (9996999)" class="w-full p-2 border rounded mb-4 text-center text-lg">
+            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold">Daxil ol</button>
+            <p id="login-error" class="text-red-500 text-sm mt-2 hidden">Yanlış kod!</p>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div id="mainContent" class="hidden container mx-auto max-w-lg p-4">
-        <header class="flex justify-between items-center py-4 border-b border-slate-800 mb-6">
-            <div>
-                <h1 class="text-xl font-bold gold-text">NeVeRa HoMe MeBeL</h1>
-                <p class="text-xs text-slate-400">Qiymət Cədvəli və İnvoys Sistemi</p>
-            </div>
-            <button onclick="logout()" class="text-slate-400 hover:text-white"><i class="fas fa-sign-out-alt text-lg"></i></button>
-        </header>
-
-        <!-- Tabs -->
-        <div class="flex gap-2 mb-6 bg-slate-800 p-1 rounded-xl">
-            <button onclick="switchTab('invoice')" id="tabInvoice" class="flex-1 py-2 text-sm font-semibold rounded-lg gold-bg text-slate-900">İnvoys</button>
-            <button onclick="switchTab('products')" id="tabProducts" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400">Məhsullar</button>
-            <button onclick="switchTab('clients')" id="tabClients" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400">Müştərilər</button>
+    <!-- ƏSAS İDARƏ PANELİ (Girişdən sonra açılır) -->
+    <div id="app-screen" class="hidden-screen p-4 max-w-6xl mx-auto">
+        <!-- Başlıq və Çıxış -->
+        <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
+            <h1 class="text-xl font-bold text-gray-800">İnvoys İdarəetmə Sistemi</h1>
+            <button onclick="logout()" class="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 text-sm">Çıxış</button>
         </div>
 
-        <!-- Invoice Tab -->
-        <div id="sectionInvoice">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Müştəri Seçin</label>
-                <select id="clientSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:outline-none">
-                    <option value="">-- Müştəri Seç --</option>
-                </select>
+        <!-- 9. ANA EKRAN STATİSTİKASI -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <p class="text-sm text-blue-600 font-medium">Ümumi İnvoys Toplamı</p>
+                <p id="stat-total-invoices" class="text-2xl font-bold text-blue-900">0.00 AZN</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-xl border border-green-200">
+                <p class="text-sm text-green-600 font-medium">Ümumi Ödənişlər</p>
+                <p id="stat-total-payments" class="text-2xl font-bold text-green-900">0.00 AZN</p>
+            </div>
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                <p class="text-sm text-amber-600 font-medium">Qalıq Borc Toplamı</p>
+                <p id="stat-total-balance" class="text-2xl font-bold text-amber-900">0.00 AZN</p>
+            </div>
+        </div>
+
+        <!-- FUNKSİONAL BÖLMƏLƏR -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- 4. MÜŞTƏRİ HESABI YARATMAQ -->
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="font-bold text-lg mb-3 border-b pb-2">Yeni Müştəri Əlavə Et</h3>
+                <form id="customer-form" onsubmit="saveCustomer(event)" class="space-y-3">
+                    <input type="text" id="cust-name" placeholder="Müştəri Adı / Şirkət" required class="w-full p-2 border rounded">
+                    <input type="text" id="cust-phone" placeholder="Telefon (məs: 994501234567)" required class="w-full p-2 border rounded">
+                    <input type="email" id="cust-email" placeholder="E-poçt" required class="w-full p-2 border rounded">
+                    <button type="submit" class="w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-900">Müştərini Yadda Saxla</button>
+                </form>
             </div>
 
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Məhsul Əlavə Et</label>
-                <div class="flex gap-2 mb-3">
-                    <select id="productSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm focus:outline-none">
-                        <option value="">-- Məhsul Seç --</option>
+            <!-- 2, 3. İNVOYS YARATMAQ VƏ YADDA SAXLAMAQ -->
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="font-bold text-lg mb-3 border-b pb-2">Yeni İnvoys Tərtib Et</h3>
+                <form id="invoice-form" onsubmit="saveInvoice(event)" class="space-y-3">
+                    <select id="inv-customer" required class="w-full p-2 border rounded">
+                        <option value="">Müştəri seçin</option>
                     </select>
-                    <input type="number" id="itemQty" value="1" min="1" class="w-16 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-center text-slate-200 text-sm">
-                </div>
-                <button onclick="addItemToInvoice()" class="w-full bg-slate-700 text-amber-400 text-sm font-semibold py-2 rounded-lg hover:bg-slate-600">+ Əlavə et</button>
+                    <input type="text" id="inv-desc" placeholder="Xidmət / Məhsul təsviri" required class="w-full p-2 border rounded">
+                    <input type="number" step="0.01" id="inv-amount" placeholder="Məbləğ (AZN)" required class="w-full p-2 border rounded">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">İnvoys Yarat və Yadda Saxla</button>
+                </form>
             </div>
 
-            <!-- Items Table -->
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
-                <h3 class="text-sm font-bold text-slate-300 mb-3">Sifariş Siyahısı</h3>
-                <div id="invoiceItems" class="space-y-2 mb-4">
-                    <p class="text-xs text-slate-500 text-center py-2">Hələ heç nə əlavə olunmayıb</p>
+            <!-- 6. ÖDƏNİŞ BÖLMƏSİ -->
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="font-bold text-lg mb-3 border-b pb-2">Ödəniş Qəbul Et</h3>
+                <form id="payment-form" onsubmit="processPayment(event)" class="space-y-3">
+                    <select id="pay-invoice" required class="w-full p-2 border rounded">
+                        <option value="">Ödəniləcək İnvoysu seçin</option>
+                    </select>
+                    <input type="number" step="0.01" id="pay-amount" placeholder="Ödənilən Məbləğ (AZN)" required class="w-full p-2 border rounded">
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Ödənişi Reallaşdır</button>
+                </form>
+            </div>
+
+            <!-- 5. HESABATLAR (Rapor) -->
+            <div class="bg-white p-4 rounded-xl shadow">
+                <h3 class="font-bold text-lg mb-3 border-b pb-2">Hesabatlar (Rapor)</h3>
+                <div class="flex space-x-2 mb-3">
+                    <button onclick="generateReport('weekly')" class="flex-1 bg-gray-100 hover:bg-gray-200 border p-2 rounded text-sm font-medium">Həftəlik</button>
+                    <button onclick="generateReport('monthly')" class="flex-1 bg-gray-100 hover:bg-gray-200 border p-2 rounded text-sm font-medium">Aylıq</button>
+                    <button onclick="generateReport('yearly')" class="flex-1 bg-gray-100 hover:bg-gray-200 border p-2 rounded text-sm font-medium">İllik</button>
                 </div>
-                <div class="flex justify-between items-center pt-3 border-t border-slate-700 font-bold">
-                    <span class="text-slate-300">Yekun Məbləğ:</span>
-                    <span id="totalAmount" class="gold-text text-lg">0 AZN</span>
+                <div id="report-output" class="p-3 bg-gray-50 border rounded text-sm min-h-[80px]">
+                    Hesabat növlərindən birini seçin.
                 </div>
             </div>
 
-            <div class="flex gap-2">
-                <button onclick="generatePDF()" class="flex-1 gold-bg text-slate-900 font-bold py-3 rounded-xl hover:bg-amber-600 transition flex items-center justify-center gap-2">
-                    <i class="fas fa-file-pdf"></i> PDF Yüklə
-                </button>
-                <button onclick="shareWhatsApp()" class="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 transition flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </button>
-            </div>
         </div>
 
-        <!-- Products Tab -->
-        <div id="sectionProducts" class="hidden">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
-                <h3 class="text-sm font-bold text-slate-300 mb-3">Yeni Məhsul</h3>
-                <input type="text" id="newProdName" placeholder="Məhsul adı (Məs: Yataq dəsti)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-2">
-                <input type="number" id="newProdPrice" placeholder="Qiyməti (AZN)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-3">
-                <button onclick="addProduct()" class="w-full gold-bg text-slate-900 font-bold py-2 rounded-lg">Məhsulu Yadda Saxla</button>
-            </div>
-            <div id="productList" class="space-y-2"></div>
+        <!-- İNVOYSLAR VƏ QAİMƏLƏR CƏDVƏLİ -->
+        <div class="bg-white p-4 rounded-xl shadow overflow-x-auto">
+            <h3 class="font-bold text-lg mb-3 border-b pb-2">Sənədlər Siyahısı (İnvoys və Qaimələr)</h3>
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="bg-gray-100 border-b">
+                        <th class="p-2">ID</th>
+                        <th class="p-2">Tarix</th>
+                        <th class="p-2">Müştəri</th>
+                        <th class="p-2">Təsvir</th>
+                        <th class="p-2">Məbləğ</th>
+                        <th class="p-2">Ödənilib</th>
+                        <th class="p-2">Status</th>
+                        <th class="p-2">Əməliyyatlar (PDF / Paylaş)</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-table-body">
+                    <!-- Dinamik doldurulacaq -->
+                </tbody>
+            </table>
         </div>
 
-        <!-- Clients Tab -->
-        <div id="sectionClients" class="hidden">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/50 mb-4">
-                <h3 class="text-sm font-bold text-slate-300 mb-3">Yeni Müştəri</h3>
-                <input type="text" id="newClientName" placeholder="Ad Soyad" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-2">
-                <input type="tel" id="newClientPhone" placeholder="Telefon (050...)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 text-sm mb-3">
-                <button onclick="addClient()" class="w-full gold-bg text-slate-900 font-bold py-2 rounded-lg">Müştərini Yadda Saxla</button>
-            </div>
-            <div id="clientList" class="space-y-2"></div>
-        </div>
     </div>
 
+    <!-- LOGIC / JAVASCRIPT -->
     <script>
-        const CORRECT_PIN = "1234";
-        let products = JSON.parse(localStorage.getItem('never_products')) || [
-            { id: 1, name: "Mətbəx Mebeli (metr)", price: 350 },
-            { id: 2, name: "Dəhliz Mebeli", price: 500 }
-        ];
-        let clients = JSON.parse(localStorage.getItem('never_clients')) || [
-            { id: 1, name: "Əli Məmmədov", phone: "0501234567" }
-        ];
-        let currentInvoice = [];
+        const PIN_CODE = "9996999";
+        const { jsPDF } = window.jspdf;
 
-        function checkPin() {
-            const pin = document.getElementById('pinInput').value;
-            if (pin === CORRECT_PIN) {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
-                initData();
+        // Yaddaş Verilənləri (LocalStorage)
+        let customers = JSON.parse(localStorage.getItem('sys_customers')) || [];
+        let invoices = JSON.parse(localStorage.getItem('sys_invoices')) || [];
+        let payments = JSON.parse(localStorage.getItem('sys_payments')) || [];
+
+        // 1. GİRİŞ KONTROLU
+        function login() {
+            const val = document.getElementById('pin-input').value;
+            if (val === PIN_CODE) {
+                document.getElementById('login-screen').classList.add('hidden-screen');
+                document.getElementById('app-screen').classList.remove('hidden-screen');
+                initApp();
             } else {
-                document.getElementById('loginError').classList.remove('hidden');
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
         function logout() {
-            document.getElementById('mainContent').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('pinInput').value = '';
+            document.getElementById('pin-input').value = '';
+            document.getElementById('app-screen').classList.add('hidden-screen');
+            document.getElementById('login-screen').classList.remove('hidden-screen');
         }
 
-        function switchTab(tab) {
-            ['invoice', 'products', 'clients'].forEach(t => {
-                document.getElementById('section' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
-                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400";
-            });
-            document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
-            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).className = "flex-1 py-2 text-sm font-semibold rounded-lg gold-bg text-slate-900";
+        function initApp() {
+            renderCustomersSelect();
+            renderInvoicesTable();
+            updateDashboard();
         }
 
-        function initData() {
-            updateClientSelect();
-            updateProductSelect();
-            renderProducts();
-            renderClients();
+        // 4. MÜŞTƏRİ HESABI
+        function saveCustomer(e) {
+            e.preventDefault();
+            const customer = {
+                id: Date.now(),
+                name: document.getElementById('cust-name').value,
+                phone: document.getElementById('cust-phone').value,
+                email: document.getElementById('cust-email').value
+            };
+            customers.push(customer);
+            localStorage.setItem('sys_customers', JSON.stringify(customers));
+            document.getElementById('customer-form').reset();
+            renderCustomersSelect();
+            alert("Müştəri əlavə olundu!");
         }
 
-        function addProduct() {
-            const name = document.getElementById('newProdName').value;
-            const price = parseFloat(document.getElementById('newProdPrice').value);
-            if (name && price) {
-                products.push({ id: Date.now(), name, price });
-                localStorage.setItem('never_products', JSON.stringify(products));
-                document.getElementById('newProdName').value = '';
-                document.getElementById('newProdPrice').value = '';
-                initData();
-            }
-        }
-
-        function addClient() {
-            const name = document.getElementById('newClientName').value;
-            const phone = document.getElementById('newClientPhone').value;
-            if (name) {
-                clients.push({ id: Date.now(), name, phone });
-                localStorage.setItem('never_clients', JSON.stringify(clients));
-                document.getElementById('newClientName').value = '';
-                document.getElementById('newClientPhone').value = '';
-                initData();
-            }
-        }
-
-        function updateClientSelect() {
-            const select = document.getElementById('clientSelect');
-            select.innerHTML = '<option value="">-- Müştəri Seç --</option>';
-            clients.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name} (${c.phone})</option>`);
-        }
-
-        function updateProductSelect() {
-            const select = document.getElementById('productSelect');
-            select.innerHTML = '<option value="">-- Məhsul Seç --</option>';
-            products.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name} - ${p.price} AZN</option>`);
-        }
-
-        function renderProducts() {
-            const list = document.getElementById('productList');
-            list.innerHTML = '';
-            products.forEach(p => {
-                list.innerHTML += `<div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center text-sm"><span class="text-slate-200">${p.name}</span><span class="gold-text font-bold">${p.price} AZN</span></div>`;
+        function renderCustomersSelect() {
+            const select = document.getElementById('inv-customer');
+            select.innerHTML = '<option value="">Müştəri seçin</option>';
+            customers.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
             });
         }
 
-        function renderClients() {
-            const list = document.getElementById('clientList');
-            list.innerHTML = '';
-            clients.forEach(c => {
-                list.innerHTML += `<div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center text-sm"><span class="text-slate-200">${c.name}</span><span class="text-slate-400">${c.phone}</span></div>`;
-            });
-        }
-
-        function addItemToInvoice() {
-            const pId = document.getElementById('productSelect').value;
-            const qty = parseInt(document.getElementById('itemQty').value);
-            if (!pId || !qty) return;
-            const prod = products.find(p => p.id == pId);
-            currentInvoice.push({ ...prod, qty, total: prod.price * qty });
-            renderInvoiceItems();
-        }
-
-        function renderInvoiceItems() {
-            const container = document.getElementById('invoiceItems');
-            if (currentInvoice.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Hələ heç nə əlavə olunmayıb</p>';
-                document.getElementById('totalAmount').innerText = '0 AZN';
-                return;
-            }
-            container.innerHTML = '';
-            let grandTotal = 0;
-            currentInvoice.forEach((item, index) => {
-                grandTotal += item.total;
-                container.innerHTML += `<div class="flex justify-between items-center bg-slate-900 p-2 rounded text-xs"><span class="text-slate-300">${item.name} x${item.qty}</span><span class="gold-text font-semibold">${item.total} AZN</span></div>`;
-            });
-            document.getElementById('totalAmount').innerText = grandTotal + ' AZN';
-        }
-
-        function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("NeVeRa HoMe MeBeL", 14, 20);
-            doc.text("Qiymət Siyahısı / Qiymət Təklifi", 14, 30);
+        // 2, 3. İNVOYS YARATMAQ VƏ YADDA SAXLAMAQ
+        function saveInvoice(e) {
+            e.preventDefault();
+            const customerId = document.getElementById('inv-customer').value;
+            const customer = customers.find(c => c.id == customerId);
             
-            const tableData = currentInvoice.map(i => [i.name, i.qty, i.price + " AZN", i.total + " AZN"]);
-            doc.autoTable({
-                startY: 40,
-                head: [['Məhsul', 'Say', 'Qiymət', 'Cəmi']],
-                body: tableData,
-            });
-            doc.save("Nevera_Mebel_Invoys.pdf");
+            const invoice = {
+                id: 'INV-' + Math.floor(1000 + Math.random() * 9000),
+                customerId: customer.id,
+                customerName: customer.name,
+                customerPhone: customer.phone,
+                customerEmail: customer.email,
+                description: document.getElementById('inv-desc').value,
+                amount: parseFloat(document.getElementById('inv-amount').value),
+                paidAmount: 0,
+                date: new Date().toISOString()
+            };
+
+            invoices.push(invoice);
+            localStorage.setItem('sys_invoices', JSON.stringify(invoices));
+            document.getElementById('invoice-form').reset();
+            initApp();
+            alert("İnvoys yaradıldı!");
         }
 
-        function shareWhatsApp() {
-            const cId = document.getElementById('clientSelect').value;
-            const client = clients.find(c => c.id == cId);
-            let msg = "NeVeRa HoMe MeBeL - Qiymət Cədvəli%0A%0A";
-            currentInvoice.forEach(i => {
-                msg += `• ${i.name} (x${i.qty}) - ${i.total} AZN%0A`;
+        // 6, 7. ÖDƏNİŞ BÖLMƏSİ VƏ QAİMƏ TƏRTİBİ
+        function processPayment(e) {
+            e.preventDefault();
+            const invId = document.getElementById('pay-invoice').value;
+            const payAmount = parseFloat(document.getElementById('pay-amount').value);
+            
+            let invoice = invoices.find(i => i.id === invId);
+            if (invoice) {
+                invoice.paidAmount += payAmount;
+                
+                // Ödəniş Tarixçəsi
+                payments.push({
+                    id: 'PAY-' + Date.now(),
+                    invoiceId: invId,
+                    amount: payAmount,
+                    date: new Date().toISOString()
+                });
+
+                localStorage.setItem('sys_invoices', JSON.stringify(invoices));
+                localStorage.setItem('sys_payments', JSON.stringify(payments));
+                
+                document.getElementById('payment-form').reset();
+                initApp();
+                alert(`Ödəniş qəbul edildi! Qaimə (Receipt) formalaşdı.`);
+            }
+        }
+
+        // CƏDVƏL RENDERİ
+        function renderInvoicesTable() {
+            const tbody = document.getElementById('invoice-table-body');
+            const paySelect = document.getElementById('pay-invoice');
+            
+            tbody.innerHTML = '';
+            paySelect.innerHTML = '<option value="">Ödəniləcək İnvoysu seçin</option>';
+
+            invoices.forEach(inv => {
+                const isPaid = inv.paidAmount >= inv.amount;
+                const statusText = isPaid ? 'Ödənilib' : (inv.paidAmount > 0 ? 'Hissəvi' : 'Gözləyir');
+                const statusColor = isPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+
+                // Ödəniş seçimi üçün doldurmaq
+                if (!isPaid) {
+                    paySelect.innerHTML += `<option value="${inv.id}">${inv.id} - ${inv.customerName} (Qalıq: ${(inv.amount - inv.paidAmount).toFixed(2)} AZN)</option>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2 font-bold">${inv.id}</td>
+                        <td class="p-2">${new Date(inv.date).toLocaleDateString()}</td>
+                        <td class="p-2">${inv.customerName}</td>
+                        <td class="p-2">${inv.description}</td>
+                        <td class="p-2">${inv.amount.toFixed(2)} AZN</td>
+                        <td class="p-2">${inv.paidAmount.toFixed(2)} AZN</td>
+                        <td class="p-2"><span class="px-2 py-1 rounded text-xs ${statusColor}">${statusText}</span></td>
+                        <td class="p-2 space-x-1">
+                            <button onclick="generatePDF('${inv.id}', 'invoice')" class="bg-gray-700 text-white px-2 py-1 rounded text-xs">İnvoys PDF</button>
+                            ${inv.paidAmount > 0 ? `<button onclick="generatePDF('${inv.id}', 'receipt')" class="bg-green-700 text-white px-2 py-1 rounded text-xs">Qaimə PDF</button>` : ''}
+                            <button onclick="shareWhatsApp('${inv.id}')" class="bg-emerald-500 text-white px-2 py-1 rounded text-xs">WP</button>
+                            <button onclick="shareEmail('${inv.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Mail</button>
+                        </td>
+                    </tr>
+                `;
             });
-            msg += `%0AYekun: ${document.getElementById('totalAmount').innerText}`;
-            const phone = client ? client.phone : "";
-            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+        }
+
+        // 9. ANA EKRAN HESABLAMALARI
+        function updateDashboard() {
+            const totalInv = invoices.reduce((sum, i) => sum + i.amount, 0);
+            const totalPay = invoices.reduce((sum, i) => sum + i.paidAmount, 0);
+            const totalBal = totalInv - totalPay;
+
+            document.getElementById('stat-total-invoices').innerText = totalInv.toFixed(2) + ' AZN';
+            document.getElementById('stat-total-payments').innerText = totalPay.toFixed(2) + ' AZN';
+            document.getElementById('stat-total-balance').innerText = totalBal.toFixed(2) + ' AZN';
+        }
+
+        // 5. İLLİK, AYLIQ VƏ HƏFTƏLİK RAPOR
+        function generateReport(type) {
+            const now = new Date();
+            let filteredInvoices = invoices.filter(i => {
+                const d = new Date(i.date);
+                if (type === 'weekly') {
+                    const diffTime = Math.abs(now - d);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays <= 7;
+                } else if (type === 'monthly') {
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                } else if (type === 'yearly') {
+                    return d.getFullYear() === now.getFullYear();
+                }
+            });
+
+            const count = filteredInvoices.length;
+            const total = filteredInvoices.reduce((s, i) => s + i.amount, 0);
+            const paid = filteredInvoices.reduce((s, i) => s + i.paidAmount, 0);
+
+            document.getElementById('report-output').innerHTML = `
+                <strong>${type.toUpperCase()} HESABAT:</strong><br>
+                Yaradılan İnvoys Sayı: ${count}<br>
+                Cəmi Məbləğ: ${total.toFixed(2)} AZN<br>
+                Yığılan Ödəniş: ${paid.toFixed(2)} AZN
+            `;
+        }
+
+        // 8. PDF YARATMAQ (İnvoys və Qısa Qaimə)
+        function createPDFDoc(invId, type) {
+            const inv = invoices.find(i => i.id === invId);
+            const doc = new jsPDF();
+
+            if (type === 'invoice') {
+                doc.setFontSize(18);
+                doc.text("INVOYS / HESAB FAKTURA", 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Invoys No: ${inv.id}`, 20, 35);
+                doc.text(`Tarix: ${new Date(inv.date).toLocaleDateString()}`, 20, 43);
+                doc.text(`Musteri: ${inv.customerName}`, 20, 51);
+                doc.text(`Xidmet/Mahsul: ${inv.description}`, 20, 65);
+                doc.text(`Odenilecek Mableg: ${inv.amount.toFixed(2)} AZN`, 20, 75);
+            } else {
+                // 7. Qısa Qaimə (Receipt)
+                doc.setFontSize(18);
+                doc.text("ODENIS QAIMESI (RECEIPT)", 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Invoys Referansi: ${inv.id}`, 20, 35);
+                doc.text(`Tarix: ${new Date().toLocaleDateString()}`, 20, 43);
+                doc.text(`Musteri: ${inv.customerName}`, 20, 51);
+                doc.text(`Odenilen Mableg: ${inv.paidAmount.toFixed(2)} AZN`, 20, 65);
+                doc.text(`Qaliq Borc: ${(inv.amount - inv.paidAmount).toFixed(2)} AZN`, 20, 73);
+                doc.text("STATUS: ODENILDILIR / QISMEN ODENILIB", 20, 85);
+            }
+
+            return { doc, inv };
+        }
+
+        function generatePDF(invId, type) {
+            const { doc, inv } = createPDFDoc(invId, type);
+            doc.save(`${type}_${inv.id}.pdf`);
+        }
+
+        // 8. WHATSAPP VƏ MAIL PAYLAŞIMI
+        function shareWhatsApp(invId) {
+            const inv = invoices.find(i => i.id === invId);
+            const text = `Salam ${inv.customerName}, sizin ${inv.id} nomreli invoysunuz: ${inv.amount} AZN. Qaliq borc: ${(inv.amount - inv.paidAmount).toFixed(2)} AZN.`;
+            const url = `https://api.whatsapp.com/send?phone=${inv.customerPhone}&text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareEmail(invId) {
+            const inv = invoices.find(i => i.id === invId);
+            const subject = encodeURIComponent(`İnvoys / Qaimə: ${inv.id}`);
+            const body = encodeURIComponent(`Hörmətli ${inv.customerName},\n\nSizin ${inv.id} nömrəli sənədiniz üzrə məbləğ: ${inv.amount} AZN.\nÖdənilən: ${inv.paidAmount} AZN.\n\nTəşəkkür edirik!`);
+            window.location.href = `mailto:${inv.customerEmail}?subject=${subject}&body=${body}`;
         }
     </script>
 </body>
